@@ -1,0 +1,45 @@
+name: Build Nebula Launcher
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '*.zip'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Extract source
+        run: |
+          mkdir source
+          unzip -q NebulaLauncher-Android11-ReleaseBuild.zip -d source
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Find Gradle project
+        run: |
+          find source -name gradlew
+
+      - name: Build APK
+        run: |
+          chmod +x $(find source -name gradlew | head -1)
+          cd $(dirname $(find source -name gradlew | head -1))
+          ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nebula-Launcher-APK
+          path: source/**/build/outputs/apk/release/*.apk
